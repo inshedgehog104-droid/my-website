@@ -1,0 +1,1121 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=750, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>房源置顶</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; -webkit-font-smoothing: antialiased; -webkit-overflow-scrolling: touch; }
+    html, body { width: 100%; height: 100%; overflow: hidden; background: #f7f7f7; font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", SimHei, Arial, Helvetica, sans-serif; -webkit-text-size-adjust: 100%; }
+    body { overflow-x: hidden; }
+
+    .page {
+      position: relative;
+      width: 750px;
+      margin: 0 auto;
+      background: #f7f7f7;
+      padding-bottom: 220px;
+      height: 100%;
+      overflow-y: scroll;
+    }
+
+    /* ========== 顶部导航栏（滚动后变白） ========== */
+    .nav-bar {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 750px;
+      height: 160px;
+      z-index: 50;
+      transition: background 0.3s ease, box-shadow 0.3s ease;
+      background: transparent;
+    }
+
+    .nav-bar.scrolled {
+      position: fixed;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #ffffff;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+
+    .status-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 24px 28px 24px 59px;
+    }
+
+    .status-bar .time {
+      font-size: 30px;
+      font-weight: 500;
+      color: #000000;
+    }
+
+    .status-bar .right-icons { display: flex; align-items: center; gap: 8px; }
+    .status-bar .wifi { width: 35px; height: 21px; }
+    .status-bar .battery { width: 54px; height: 40px; }
+
+    .nav-content {
+      position: relative;
+      display: flex;
+      align-items: center;
+      padding: 0 24px;
+      height: 80px;
+    }
+
+    .nav-back { width: 48px; height: 48px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+    .nav-back img { width: 48px; height: 48px; }
+    .nav-bar.scrolled .nav-back img { filter: none; }
+
+    .nav-title {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 34px;
+      font-weight: 600;
+      color: #333333;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .nav-bar.scrolled .nav-title { opacity: 1; }
+
+    /* ========== 顶部横幅区 ========== */
+    .hero {
+      position: relative;
+      width: 750px;
+      height: 400px;
+      background-image: url('.figma/image/mq6dv68w-i36huna.svg');
+      background-position: center;
+      background-size: cover;
+      background-repeat: no-repeat;
+    }
+
+    .hero-title {
+      position: absolute;
+      top: 171px;
+      left: 50px;
+      width: 500px;
+      line-height: 60px;
+    }
+
+    .hero-title .text-a {
+      color: #ff3c00;
+      font-family: "Alimama ShuHeiTi", "PingFang SC", sans-serif;
+      font-size: 52px;
+      font-weight: 700;
+    }
+
+    .hero-title .text-b {
+      color: #ff552e;
+      font-family: "Alimama ShuHeiTi", "PingFang SC", sans-serif;
+      font-size: 52px;
+      font-weight: 700;
+    }
+
+    .hero-title .text-c {
+      color: #3c2210;
+      font-family: "Alimama ShuHeiTi", "PingFang SC", sans-serif;
+      font-size: 52px;
+      font-weight: 700;
+    }
+
+    .hero-tags {
+      position: absolute;
+      top: 248px;
+      left: 50px;
+      display: flex;
+      align-items: center;
+      gap: 24px;
+    }
+
+    .hero-tag { display: flex; align-items: center; gap: 6px; }
+    .hero-tag img { width: 26px; height: 26px; }
+    .hero-tag span { font-size: 26px; color: #333333; line-height: 26px; }
+
+    .hero-badge {
+      position: absolute;
+      top: 121px;
+      left: 496px;
+      width: 214px;
+      height: 186px;
+    }
+
+    .hero-badge .circle-1 {
+      position: absolute;
+      top: 115px;
+      left: 63px;
+      width: 127px;
+      height: 63px;
+      border-radius: 50%;
+      background: #c45b00;
+      opacity: 0.68;
+    }
+
+    .hero-badge .circle-2 {
+      position: absolute;
+      top: 116px;
+      left: 63px;
+      width: 127px;
+      height: 60px;
+      border-radius: 50%;
+      background: #ec7e1d;
+      opacity: 0.96;
+    }
+
+    .hero-badge img.main-img {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 214px;
+      height: 186px;
+    }
+
+    /* ========== 房源信息卡片 ========== */
+    .listing-card {
+      position: absolute;
+      top: 314px;
+      left: 24px;
+      width: 702px;
+      background: #ffffff;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      z-index: 10;
+      overflow: hidden;
+    }
+
+    .listing-card .card-header {
+      position: relative;
+      height: 84px;
+      background-image: url('.figma/image/mq6dv68w-pmvi805.svg');
+      background-position: center;
+      background-size: cover;
+      background-repeat: no-repeat;
+    }
+
+    .listing-card .card-header .title-text {
+      position: absolute;
+      top: 24px;
+      left: 30px;
+      font-size: 32px;
+      font-weight: 600;
+      color: #111111;
+    }
+
+    .listing-card .card-header .change-btn {
+      position: absolute;
+      top: 24px;
+      right: 30px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+    }
+
+    .listing-card .card-header .change-btn img { width: 24px; height: 24px; }
+    .listing-card .card-header .change-btn span { font-size: 24px; color: #666666; }
+
+    .listing-card .card-body {
+      display: flex;
+      padding: 20px 29px 10px;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .listing-card .card-body .house-img {
+      width: 141px;
+      height: 106px;
+      border-radius: 8px;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+    .listing-card .card-body .house-img img { width: 100%; height: 100%; object-fit: cover; }
+
+    .listing-card .card-body .house-info { flex: 1; display: flex; flex-direction: column; gap: 10px; }
+    .listing-card .card-body .house-info .line-1 {
+      font-size: 26px; color: #333333; font-weight: 500; line-height: 28px;
+    }
+    .listing-card .card-body .house-info .line-2 {
+      font-size: 24px; color: #666666; line-height: 26px;
+      font-weight: 300;
+    }
+    .listing-card .card-body .house-info .line-3 {
+      font-size: 24px; color: #666666; font-weight: 300; line-height: 26px;
+    }
+
+    .alert-bar {
+      display: flex;
+      align-items: center;
+      margin: 14px 29px 22px;
+      padding: 18px 20px;
+      background-image: url('.figma/image/mq6dv68w-o39dq1l.svg');
+      background-position: center;
+      background-size: cover;
+      background-repeat: no-repeat;
+      border-radius: 8px;
+      gap: 10px;
+    }
+    .alert-bar img { width: 28px; height: 28px; flex-shrink: 0; }
+    .alert-bar span { font-size: 24px; color: #ff3024; line-height: 26px; flex: 1; }
+
+    /* ========== 置顶时长区（整体白色卡片，含标题+卡片+权益） ========== */
+    .duration-section {
+      margin-top: 254px;
+      padding: 0 24px;
+    }
+
+    .duration-card-wrapper {
+      background: #ffffff;
+      border-radius: 12px;
+      padding: 50px 24px 30px;
+    }
+
+    .duration-section .section-title {
+      display: block;
+      font-size: 32px;
+      font-weight: 600;
+      color: #111111;
+      margin-bottom: 20px;
+    }
+
+    .duration-scroll-wrap {
+      overflow-x: auto;
+      overflow-y: hidden;
+      -webkit-overflow-scrolling: touch;
+      padding: 30px 0 20px;
+      margin: -10px 0 -20px;
+    }
+    .duration-scroll-wrap::-webkit-scrollbar { display: none; }
+
+    .duration-list {
+      display: flex;
+      gap: 16px;
+    }
+
+    /* 外层卡片容器（标签 + 内部卡片） */
+    .duration-card {
+      flex-shrink: 0;
+      width: 180px;
+      cursor: pointer;
+      position: relative;
+      transition: all 0.2s ease;
+    }
+
+    /* 内部卡片主体 */
+    .duration-card .duration-item {
+      width: 180px;
+      background: #ffffff;
+      border-radius: 16px;
+      border: 2px solid #e5e5e5;
+      padding: 24px 16px 20px;
+      transition: all 0.2s ease;
+    }
+
+    /* 选中状态 */
+    .duration-card.active .duration-item {
+      border-color: #ff552e;
+      background: #fff8f5;
+    }
+
+    /* 标签在卡片外部，位于卡片上方 */
+    .duration-card .badge {
+      position: absolute;
+      top: -20px;
+      left: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      overflow: visible;
+      background-position: center;
+      background-size: cover;
+      background-repeat: no-repeat;
+      border-radius: 8px 8px 8px 0;
+      z-index: 2;
+    }
+
+    .duration-card .badge.badge-recommend {
+      width: 80px;
+      height: 40px;
+      background-image: url('.figma/image/mq6fl0eu-dv8lj6t.svg');
+    }
+
+    .duration-card .badge.badge-value {
+      width: 144px;
+      height: 40px;
+      background-image: linear-gradient(87deg, #ff3c00 17%, #ff9244 107%);
+      border-radius: 8px 8px 8px 0;
+    }
+
+    .duration-card .badge.badge-cost {
+      width: 120px;
+      height: 40px;
+      background-image: url('.figma/image/mq6fl5mm-66wigff.svg');
+    }
+
+    .duration-card .badge span {
+      padding: 5px 14px;
+      color: #ffffff;
+      font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", SimHei, Arial, Helvetica, sans-serif;
+      font-size: 20px;
+      font-weight: 500;
+      letter-spacing: 0;
+      line-height: 20px;
+      white-space: nowrap;
+    }
+
+    .duration-card .duration-item .name {
+      font-size: 28px;
+      font-weight: 600;
+      color: #333333;
+      margin-bottom: 14px;
+    }
+
+    .duration-card.active .duration-item .name { color: #ff552e; }
+
+    .duration-item .original {
+      font-size: 22px;
+      color: #999999;
+      text-decoration: line-through;
+      margin-bottom: 6px;
+      font-weight: 300;
+    }
+
+    .duration-item .price-row { display: flex; align-items: center; }
+    .duration-item .price-row .price { color: #ff552e; font-size: 34px; font-weight: 700; }
+    .duration-item .price-row .discount {
+      margin-left: 10px;
+      color: #ff552e;
+      font-size: 20px;
+      font-weight: 300;
+      width: 52px;
+      height: 26px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid #ff552e;
+      border-radius: 6px;
+    }
+
+    /* ========== 权益区（现在在置顶卡片内部，不再独立背景） ========== */
+    .benefit-section {
+      margin-top: 20px;
+    }
+
+    .benefit-section .item {
+      display: flex;
+      align-items: flex-start;
+      padding: 10px 0;
+    }
+
+    .benefit-section .item img.check {
+      width: 28px;
+      height: 28px;
+      margin-right: 16px;
+      margin-top: 2px;
+      flex-shrink: 0;
+    }
+
+    .benefit-section .item span {
+      font-size: 26px;
+      color: #333333;
+      line-height: 32px;
+      flex: 1;
+    }
+
+    .benefit-section .item span .highlight {
+      color: #ff552e;
+      font-weight: 700;
+    }
+
+    /* ========== 价格明细 ========== */
+    .price-section {
+      margin: 20px 24px 0;
+      background: #ffffff;
+      border-radius: 12px;
+      padding: 24px;
+    }
+
+    .price-section .section-title {
+      font-size: 28px;
+      font-weight: 600;
+      color: #111111;
+      margin-bottom: 20px;
+    }
+
+    .price-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 0;
+    }
+
+    .price-row .label { font-size: 26px; color: #666666; }
+    .price-row .value { font-size: 26px; color: #333333; }
+    .price-row .value.discount { color: #ff552e; }
+
+    .price-row.total {
+      padding-top: 24px;
+      border-top: 1px solid #f0f0f0;
+      margin-top: 10px;
+    }
+
+    .price-row.total .label { font-size: 28px; font-weight: 600; color: #111111; }
+    .price-row.total .value { font-size: 36px; font-weight: 700; color: #ff552e; }
+
+    /* ========== 温馨提示 ========== */
+    .tips {
+      margin: 20px 24px 0;
+      background: #FFF2EC;
+      padding: 20px 24px;
+      border-radius: 8px;
+    }
+
+    .tips p { font-size: 22px; color: #FD5902; line-height: 32px; }
+
+    /* ========== 底部固定栏 ========== */
+    .bottom-bar {
+      position: fixed;
+      bottom: 0;
+      width: 750px;
+      z-index: 100;
+    }
+
+    .bottom-bar .bar-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px 32px 20px;
+      background: #ffffff;
+      box-shadow: 0 -2px 8px rgba(0,0,0,0.06);
+    }
+    .bottom-bar .bar-inner { padding-bottom: calc(20px + env(safe-area-inset-bottom)); }
+
+    .bottom-bar .info-block {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .bottom-bar .info-block .pay-line {
+      font-size: 28px;
+      color: #333333;
+    }
+    .bottom-bar .info-block .pay-line .amount {
+      color: #ff3c00;
+      font-size: 36px;
+      font-weight: 700;
+      margin-left: 4px;
+    }
+    .bottom-bar .info-block .saved-line { font-size: 24px; color: #ff3c00; }
+
+    .bottom-bar .pay-btn {
+      padding: 24px 56px;
+      background-image: url('.figma/image/mq6dv68w-7u7lxqx.svg');
+      background-position: center;
+      background-size: cover;
+      background-repeat: no-repeat;
+      border-radius: 24px;
+      cursor: pointer;
+    }
+
+    .bottom-bar .pay-btn span {
+      font-size: 32px;
+      font-weight: 600;
+      color: #ffffff;
+    }
+
+    .bottom-indicator {
+      background: #ffffff;
+      padding: 20px 240px 18px;
+      display: flex;
+      justify-content: center;
+    }
+    .bottom-indicator .inner {
+      width: 268px;
+      height: 10px;
+      border-radius: 200px;
+      background: #000000;
+    }
+
+    /* ========== 房源选择弹窗 ========== */
+    .modal-mask {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.7);
+      z-index: 500;
+      display: none;
+    }
+
+    .modal-mask.show { display: block; }
+
+    .modal-panel {
+      position: fixed;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 750px;
+      background: #ffffff;
+      border-radius: 24px 24px 0 0;
+      padding: 40px 30px 0;
+      z-index: 600;
+      display: none;
+    }
+
+    .modal-panel.show {
+      display: block;
+    }
+
+    @keyframes slideUp {
+      from { transform: translate(-50%, 100%); }
+      to { transform: translate(-50%, 0); }
+    }
+
+    .modal-header {
+      position: relative;
+      padding-bottom: 30px;
+      border-bottom: 1px solid #f0f0f0;
+      text-align: center;
+    }
+
+    .modal-header .title { font-size: 34px; font-weight: 600; color: #333333; }
+
+    .modal-header .close {
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 40px;
+      height: 40px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-header .close img { width: 24px; height: 24px; }
+
+    .modal-list { margin-top: 10px; }
+
+    .modal-list .m-item {
+      display: flex;
+      align-items: flex-start;
+      padding: 30px 0;
+      border-bottom: 1px solid #f0f0f0;
+      cursor: pointer;
+    }
+
+    .modal-list .m-item:last-child { border-bottom: none; }
+
+    .modal-list .m-item .m-img {
+      width: 200px;
+      height: 150px;
+      border-radius: 12px;
+      overflow: hidden;
+      margin-right: 20px;
+      flex-shrink: 0;
+      position: relative;
+    }
+    .modal-list .m-item .m-img img { width: 100%; height: 100%; object-fit: cover; }
+    .modal-list .m-item .m-img .m-tag {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      background: rgba(0,0,0,0.5);
+      color: #ffffff;
+      font-size: 22px;
+      padding: 6px 14px;
+    }
+
+    .modal-list .m-item .m-info {
+      flex: 1;
+      align-self: center;
+    }
+
+    .modal-list .m-item .m-info .m-title {
+      font-size: 28px;
+      color: #333333;
+      line-height: 36px;
+      margin-bottom: 16px;
+      font-weight: 500;
+    }
+
+    .modal-list .m-item .m-info .m-price {
+      color: #ff552e;
+      font-size: 30px;
+      font-weight: 700;
+    }
+    .modal-list .m-item .m-info .m-price small { font-size: 22px; font-weight: 500; }
+
+    .modal-list .m-item .m-check {
+      width: 44px;
+      height: 44px;
+      margin-top: 50px;
+      margin-left: 20px;
+      border-radius: 8px;
+      border: 2px solid #dcdcdc;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: all 0.2s ease;
+    }
+
+    .modal-list .m-item .m-check.checked {
+      background: #ff552e;
+      border-color: #ff552e;
+    }
+
+    .modal-list .m-item .m-check img {
+      width: 28px;
+      height: 28px;
+      display: none;
+    }
+    .modal-list .m-item .m-check.checked img { display: block; }
+
+    .modal-confirm-btn {
+      margin: 30px 0 20px;
+      background-image: url('.figma/image/mq6dv689-bdvh6ai.svg');
+      background-position: center;
+      background-size: cover;
+      background-repeat: no-repeat;
+      padding: 28px 20px;
+      text-align: center;
+      cursor: pointer;
+      border-radius: 12px;
+    }
+
+    .modal-confirm-btn span {
+      font-size: 32px;
+      font-weight: 600;
+      color: #ffffff;
+    }
+
+    .modal-indicator {
+      background: #ffffff;
+      padding: 20px 240px 18px;
+      display: flex;
+      justify-content: center;
+      margin: 0 -30px;
+    }
+    .modal-indicator .inner {
+      width: 268px;
+      height: 10px;
+      border-radius: 200px;
+      background: #000000;
+    }
+
+  </style>
+</head>
+<body>
+  <div class="page" id="page">
+    <!-- 顶部导航栏 -->
+    <div class="nav-bar" id="navBar">
+      <div class="status-bar">
+        <span class="time">1:20</span>
+        <div class="right-icons">
+          <img class="wifi" src=".figma/image/mq6dv68w-64indos.svg" />
+          <img class="battery" src=".figma/image/mq6dv68w-k7fru3o.svg" />
+        </div>
+      </div>
+      <div class="nav-content">
+        <div class="nav-back"><img src=".figma/image/mq7jc4bs-55upkg8.svg" /></div>
+        <div class="nav-title">置顶</div>
+      </div>
+    </div>
+
+    <!-- 顶部横幅 -->
+    <div class="hero">
+      <div class="hero-title">
+        <span class="text-a">置顶房源</span><span class="text-b">&nbsp;</span><span class="text-c">加速出租</span>
+      </div>
+      <div class="hero-tags">
+        <div class="hero-tag"><img src=".figma/image/mq6dv68w-s8nyfyb.svg" /><span>首页展示</span></div>
+        <div class="hero-tag"><img src=".figma/image/mq6dv68w-s8nyfyb.svg" /><span>加倍曝光</span></div>
+        <div class="hero-tag"><img src=".figma/image/mq6dv68w-s8nyfyb.svg" /><span>咨询提升</span></div>
+      </div>
+      <div class="hero-badge">
+        <div class="circle-1"></div>
+        <div class="circle-2"></div>
+        <img class="main-img" src=".figma/image/mq6dv68y-gjob7wk.png" />
+      </div>
+    </div>
+
+    <!-- 房源信息卡片 -->
+    <div class="listing-card">
+      <div class="card-header">
+        <span class="title-text">房源信息</span>
+        <div class="change-btn" id="changeBtn">
+          <img src=".figma/image/mq6dv68w-xf8gajo.svg" />
+          <span>更换房源</span>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="house-img"><img id="houseImg" src=".figma/image/mq6dv68w-hyzunv9.png" /></div>
+        <div class="house-info">
+          <div class="line-1" id="houseTitle">整租｜鑫苑鑫都汇 2室1厅1卫</div>
+          <div class="line-2" id="houseCode">房源编号：4483595829517</div>
+          <div class="line-3" id="housePrice">4500元/月·100㎡·酒仙桥</div>
+        </div>
+      </div>
+      <div class="alert-bar">
+        <img src=".figma/image/mq6dv68w-kwnngtk.svg" />
+        <span id="houseAlert">近7天仅获得23次曝光，低于同小区86%房源</span>
+      </div>
+    </div>
+
+    <!-- 置顶时长（整体白色卡片，标题+套餐+权益都在内） -->
+    <div class="duration-section">
+      <div class="duration-card-wrapper">
+        <span class="section-title">置顶时长</span>
+        <div class="duration-scroll-wrap">
+          <div class="duration-list" id="durationList">
+            <!-- JS 渲染 -->
+          </div>
+        </div>
+        <!-- 权益列表（放在置顶卡片内部，共用白色背景） -->
+        <div class="benefit-section" id="benefitSection">
+          <!-- JS 渲染 -->
+        </div>
+      </div>
+    </div>
+
+    <!-- 价格明细 -->
+    <div class="price-section">
+      <div class="section-title">价格明细</div>
+      <div class="price-row">
+        <span class="label">套餐价格</span>
+        <span class="value" id="pPackage">¥399</span>
+      </div>
+      <div class="price-row">
+        <span class="label">优惠券</span>
+        <span class="value discount" id="pCoupon">¥0</span>
+      </div>
+      <div class="price-row">
+        <span class="label">房产钻余额</span>
+        <span class="value discount" id="pBalance">-¥15</span>
+      </div>
+      <div class="price-row total">
+        <span class="label">合计</span>
+        <span class="value" id="pTotal">¥384</span>
+      </div>
+    </div>
+
+    <!-- 温馨提示 -->
+    <div class="tips">
+      <p>温馨提示：置顶生效后，房源若变更商圈或价格区间，置顶权益即刻失效且不退费，建议确认房源信息准确后再购买。</p>
+    </div>
+
+  </div>
+
+
+    <!-- 底部固定栏 -->
+    <div class="bottom-bar">
+      <div class="bar-inner">
+        <div class="info-block">
+          <div class="pay-line">实付金额：<span class="amount" id="bottomAmount">¥384</span></div>
+          <div class="saved-line" id="bottomSaved">已优惠¥0</div>
+        </div>
+        <div class="pay-btn"><span>立即加速</span></div>
+      </div>
+    </div>
+
+  <!-- 房源选择弹窗 -->
+  <div class="modal-mask" id="modalMask"></div>
+  <div class="modal-panel" id="modalPanel">
+    <div class="modal-header">
+      <span class="title">选择开通置顶的房源</span>
+      <div class="close" id="modalClose"><img src=".figma/image/mq54gps4-tqpnfvr.svg" /></div>
+    </div>
+    <div class="modal-list" id="modalList">
+      <!-- JS 渲染 -->
+    </div>
+    <div class="modal-confirm-btn" id="modalConfirm"><span>确定</span></div>
+    <div class="modal-indicator"><div class="inner"></div></div>
+  </div>
+
+  <script>
+    // ===== 数据 =====
+    // 优惠券统一为 0，房产钻余额统一为 15
+    // 每个套餐的高亮字段通过 benefitHighlights 控制（天数、百分比）
+    // badgeType: value=85%房东选择（渐变）/recommend=推荐/cost=高性价比
+    const durations = [
+      {
+        id: 'd30',
+        name: '30天置顶',
+        original: '原价¥799',
+        price: '¥614',
+        discount: '92折',
+        badgeType: 'value',
+        badgeText: '85%房东选择',
+        package: 614,
+        coupon: 0,
+        balance: 15,
+        total: 599,
+        benefits: [
+          { text: '排名靠前·首页优先展示30天', highlight: '30天' },
+          { text: '超级流量·曝光提升约300%', highlight: '300%' },
+          { text: '咨询提升·预计咨询量提升150%+', highlight: '150%+' },
+          { text: '极速退款·提前出租 剩余天数可退', highlight: '剩余天数可退' }
+        ]
+      },
+      {
+        id: 'd15',
+        name: '15天置顶',
+        original: '原价¥399',
+        price: '¥314',
+        discount: '93折',
+        badgeType: 'recommend',
+        badgeText: '推荐',
+        package: 314,
+        coupon: 0,
+        balance: 15,
+        total: 299,
+        benefits: [
+          { text: '排名靠前·首页优先展示15天', highlight: '15天' },
+          { text: '超级流量·曝光提升约200%', highlight: '200%' },
+          { text: '咨询提升·预计咨询量提升120%+', highlight: '120%+' },
+          { text: '极速退款·提前出租 剩余天数可退', highlight: '剩余天数可退' }
+        ]
+      },
+      {
+        id: 'd7',
+        name: '7天置顶',
+        original: '原价¥190',
+        price: '¥151',
+        discount: '95折',
+        badgeType: 'cost',
+        badgeText: '高性价比',
+        package: 151,
+        coupon: 0,
+        balance: 15,
+        total: 136,
+        benefits: [
+          { text: '排名靠前·首页优先展示7天', highlight: '7天' },
+          { text: '超级流量·曝光提升约150%', highlight: '150%' },
+          { text: '咨询提升·预计咨询量提升80%+', highlight: '80%+' },
+          { text: '极速退款·提前出租 剩余天数可退', highlight: '剩余天数可退' }
+        ]
+      },
+      {
+        id: 'd5',
+        name: '5天置顶',
+        original: '原价¥190',
+        price: '¥98',
+        discount: '98折',
+        badgeType: 'recommend',
+        badgeText: '推荐',
+        package: 98,
+        coupon: 0,
+        balance: 15,
+        total: 83,
+        benefits: [
+          { text: '排名靠前·首页优先展示5天', highlight: '5天' },
+          { text: '超级流量·曝光提升约100%', highlight: '100%' },
+          { text: '咨询提升·预计咨询量提升50%+', highlight: '50%+' },
+          { text: '极速退款·提前出租 剩余天数可退', highlight: '剩余天数可退' }
+        ]
+      }
+    ];
+
+    const houses = [
+      {
+        id: 'h1',
+        title: '整租｜鑫苑鑫都汇 2室1厅1卫',
+        code: '房源编号：4483595829517',
+        price: '4500元/月·100㎡·酒仙桥',
+        alert: '近7天仅获得23次曝光，低于同小区86%房源',
+        img: '.figma/image/mq6dv68w-hyzunv9.png'
+      },
+      {
+        id: 'h2',
+        title: '整租｜安慧里五区安慧里五区2室1厅1卫',
+        code: '房源编号：4483595829518',
+        price: '2650元/月',
+        alert: '近期咨询明显减少，您的房源正被更多同类房源超越',
+        img: '.figma/image/mq6dv689-txgis70.png'
+      },
+      {
+        id: 'h3',
+        title: '整租｜安慧里五区1室1厅1卫',
+        code: '房源编号：4483595829519',
+        price: '2650元/月',
+        alert: '近期咨询明显减少，建议置顶提升曝光',
+        img: '.figma/image/mq6dv689-dcdlurx.png'
+      }
+    ];
+
+    let currentDurationIdx = 1; // 默认选中 15 天
+    let currentHouseIdx = 0;
+
+    // ===== 渲染置顶时长 =====
+    function renderDuration() {
+      const listEl = document.getElementById('durationList');
+      listEl.innerHTML = durations.map((d, idx) => `
+        <div class="duration-card ${idx === currentDurationIdx ? 'active' : ''}" data-idx="${idx}">
+          <div class="badge badge-${d.badgeType}"><span>${d.badgeText}</span></div>
+          <div class="duration-item">
+            <div class="name">${d.name}</div>
+            <div class="original">${d.original}</div>
+            <div class="price-row">
+              <span class="price">${d.price}</span>
+              <span class="discount">${d.discount}</span>
+            </div>
+          </div>
+        </div>
+      `).join('');
+
+      listEl.querySelectorAll('.duration-card').forEach(el => {
+        el.addEventListener('click', () => {
+          const idx = parseInt(el.dataset.idx, 10);
+          currentDurationIdx = idx;
+          renderDuration();
+          renderBenefits();
+          renderPrice();
+        });
+      });
+    }
+
+    // ===== 渲染权益（带高亮字段 + 红色对号图标） =====
+    function renderBenefits() {
+      const d = durations[currentDurationIdx];
+      const el = document.getElementById('benefitSection');
+      el.innerHTML = d.benefits.map(b => {
+        let text = b.text;
+        if (b.highlight) {
+          text = text.replace(b.highlight, `<span class="highlight">${b.highlight}</span>`);
+        }
+        return `
+          <div class="item">
+            <img class="check" src=".figma/image/mq6fki68-i1tjpqg.svg" />
+            <span>${text}</span>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // ===== 渲染价格明细 + 底部 =====
+    function renderPrice() {
+      const d = durations[currentDurationIdx];
+      document.getElementById('pPackage').textContent = `¥${d.package}`;
+      document.getElementById('pCoupon').textContent = d.coupon > 0 ? `-¥${d.coupon}` : '¥0';
+      document.getElementById('pBalance').textContent = d.balance > 0 ? `-¥${d.balance}` : '¥0';
+      document.getElementById('pTotal').textContent = `¥${d.total}`;
+
+      document.getElementById('bottomAmount').textContent = `¥${d.total}`;
+      document.getElementById('bottomSaved').textContent = `已优惠¥${d.coupon}`;
+    }
+
+    // ===== 渲染房源选择弹窗列表 =====
+    function renderModalList() {
+      const el = document.getElementById('modalList');
+      el.innerHTML = houses.map((h, idx) => `
+        <div class="m-item" data-idx="${idx}">
+          <div class="m-img">
+            <img src="${h.img}" />
+            <span class="m-tag">上架中</span>
+          </div>
+          <div class="m-info">
+            <div class="m-title">${h.title}</div>
+            <div class="m-price">${h.price.split('元')[0]}<small>元/月</small></div>
+          </div>
+          <div class="m-check ${idx === currentHouseIdx ? 'checked' : ''}">
+            <img src=".figma/image/mq6dv689-edtwjyz.svg" />
+          </div>
+        </div>
+      `).join('');
+
+      el.querySelectorAll('.m-item').forEach(item => {
+        item.addEventListener('click', () => {
+          const idx = parseInt(item.dataset.idx, 10);
+          currentHouseIdx = idx;
+          renderModalList();
+        });
+      });
+    }
+
+    // ===== 切换当前页面房源 =====
+    function applyHouse() {
+      const h = houses[currentHouseIdx];
+      document.getElementById('houseTitle').textContent = h.title;
+      document.getElementById('houseCode').textContent = h.code;
+      document.getElementById('housePrice').textContent = h.price;
+      document.getElementById('houseAlert').textContent = h.alert;
+      document.getElementById('houseImg').src = h.img;
+    }
+
+    // ===== 弹窗开关 =====
+    const mask = document.getElementById('modalMask');
+    const panel = document.getElementById('modalPanel');
+    function openModal() {
+      mask.classList.add('show');
+      panel.classList.add('show');
+    }
+    function closeModal() {
+      mask.classList.remove('show');
+      panel.classList.remove('show');
+    }
+    document.getElementById('changeBtn').addEventListener('click', () => {
+      renderModalList();
+      openModal();
+    });
+    document.getElementById('modalClose').addEventListener('click', closeModal);
+    mask.addEventListener('click', closeModal);
+    document.getElementById('modalConfirm').addEventListener('click', () => {
+      applyHouse();
+      closeModal();
+    });
+
+    // ===== 顶部导航滚动效果 =====
+    const navBar = document.getElementById('navBar');
+    function onScroll() {
+      const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+      if (scrollTop > 100) {
+        navBar.classList.add('scrolled');
+      } else {
+        navBar.classList.remove('scrolled');
+      }
+    }
+    window.addEventListener('scroll', onScroll, { passive: true });
+
+    // ===== 初始化 =====
+    renderDuration();
+    renderBenefits();
+    renderPrice();
+    renderModalList();
+
+    // ===== 移动端自适应缩放 =====
+    (function() {
+      var page = document.getElementById('page');
+      var modalPanel = document.getElementById('modalPanel');
+      var bottomBar = document.querySelector('.bottom-bar');
+      function scalePage() {
+        var sw = window.innerWidth;
+        var scale = sw / 750;
+        page.style.transformOrigin = 'top left';
+        page.style.transform = 'scale(' + scale + ')';
+        page.style.width = '750px';
+        // 底部固定栏同样缩放
+        if (bottomBar) {
+          bottomBar.style.transformOrigin = 'bottom left';
+          bottomBar.style.transform = 'scale(' + scale + ')';
+          bottomBar.style.width = '750px';
+          bottomBar.style.left = '50%';
+          bottomBar.style.marginLeft = (-375 * scale) + 'px';
+        }
+        // 弹窗也要同样缩放
+        if (modalPanel) {
+          modalPanel.style.transformOrigin = 'bottom center';
+          modalPanel.style.transform = 'translateX(-50%) scale(' + scale + ')';
+          modalPanel.style.width = '750px';
+        }
+      }
+      window.addEventListener('resize', scalePage);
+      scalePage();
+    })();
+  </script>
+</body>
+</html>
